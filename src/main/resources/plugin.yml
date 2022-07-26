@@ -6,4 +6,5 @@ authors: [ Rayto ]
 description: Permet de faire apparaitre aléatoirement des caisses de ravitaillement.
 commands:
   crate:
-    description: "test "
+    description: "Permet de générer un event largage."
+    permission: "crate.init"
