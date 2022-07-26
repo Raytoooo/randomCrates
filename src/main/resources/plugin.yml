@@ -1,0 +1,9 @@
+name: RandomCrates
+version: '${project.version}'
+main: fr.rayto.randomcrates.RandomCrates
+api-version: 1.7.10
+authors: [ Rayto ]
+description: Permet de faire apparaitre aléatoirement des caisses de ravitaillement.
+commands:
+  crate:
+    description: "test "
