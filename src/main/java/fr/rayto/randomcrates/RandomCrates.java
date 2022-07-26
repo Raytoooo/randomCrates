@@ -43,12 +43,9 @@ public final class RandomCrates extends JavaPlugin {
             config.addDefault("loot."+ i +".drop_rate", 0);
         }
 
-
-
         config.options().copyDefaults(true);
         saveConfig();
         setState(State.WAITING);
-
 
         getCommand("crate").setExecutor(new RandomCratesCommand(this));
 
@@ -109,7 +106,6 @@ public final class RandomCrates extends JavaPlugin {
         if(task == task1) {
             Bukkit.getServer().getScheduler().cancelTask(this.task1);
         }
-
     }
 
     /**
