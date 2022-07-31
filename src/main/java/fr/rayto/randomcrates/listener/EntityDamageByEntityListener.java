@@ -36,7 +36,7 @@ public class EntityDamageByEntityListener implements Listener {
                 if (entity.getHealth() - event.getFinalDamage() <= 0) {
                     if(event.getDamager() instanceof Player) {
                         int i =0 ;
-                        while(i < 10 ){
+                        while(i < main.getConfig().getInt("crate.loot_number")){
                             i++;
                             int random = new Random().nextInt(100);
                             Material material = Material.getMaterial(main.getConfig().getInt("loot." + i + ".id"));

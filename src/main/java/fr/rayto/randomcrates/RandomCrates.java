@@ -33,9 +33,11 @@ public final class RandomCrates extends JavaPlugin {
         config.addDefault("crate.preparation_time", 2);
         config.addDefault("crate.despawn_time", 10);
         config.addDefault("crate.world_spawn_name", "world");
+        config.addDefault("crate.loot_number", 10);
+
 
         int i =0 ;
-        while(i < 10 ){
+        while(i < config.getInt("crate.loot_number")  ){
             i++;
             config.addDefault("loot." + i +".id", 0);
             config.addDefault("loot."+ i +".amount_max", 1);

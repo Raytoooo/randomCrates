@@ -33,8 +33,6 @@ public class RandomCratesCommand implements CommandExecutor {
      * @return true if the command was successful, otherwise false
      */
     public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
-
-
         if (sender instanceof Player) {
             if(main.getConfig().getBoolean("crate.event_ready")) {
                 Player player = (Player) sender;
