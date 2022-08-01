@@ -12,6 +12,8 @@ import org.bukkit.util.Vector;
 
 import java.util.Random;
 
+import static fr.rayto.randomcrates.commands.RandomCratesCommand.getNearbyEntities;
+
 public final class RandomCrates extends JavaPlugin {
 
     /* Config */
@@ -79,7 +81,8 @@ public final class RandomCrates extends JavaPlugin {
     public void StartParachute(LivingEntity crate) {
         this.task1 = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
             if(!crate.getLocation().getChunk().isLoaded()) {
-                crate.getLocation().getChunk().load();
+                crate.getLocation().getChunk().load(true);
+
             }
             if(crate.isDead()) {
                 stopScheduler(task1);
@@ -149,7 +152,7 @@ public final class RandomCrates extends JavaPlugin {
             int x = (int) (random.nextInt((int) (Xmax-Xmin)) + Xmin);
             int z = (int) (random.nextInt((int) (Zmax-Zmin)) + Zmin);
             int y = world.getHighestBlockYAt(x,z);
-            location = new Location(world, x, y+ (250-y), z, yaw, pitch);
+            location = new Location(world, x, y+(250-y), z, yaw, pitch);
             below = world.getBlockAt(x, y-1, z).getType();
         }
         return location;
@@ -185,21 +188,28 @@ public final class RandomCrates extends JavaPlugin {
                 Bukkit.broadcastMessage(" ");
                 Bukkit.broadcastMessage("§8§l§m+                                    +");
 
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "summon MobCrate " + crateLoc.getX() + " " + crateLoc.getY() + " " + crateLoc.getZ());
-
                 final LivingEntity[] crate = {null};
 
-                for (Entity nearby : RandomCratesCommand.getNearbyEntities(crateLoc, 5)) {
-                    if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
-                        crate[0] = (LivingEntity) nearby;
-                        crate[0].setRemoveWhenFarAway(false);
-                    }
-                }
+                Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
 
-                StartParachute(crate[0]);
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
+
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
+
+                        for (Entity nearby : getNearbyEntities(crateLoc, 5)) {
+                            if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
+                                crate[0] = (LivingEntity) nearby;
+                                crate[0].setRemoveWhenFarAway(false);
+                            }
+                        }
+
+                        StartParachute(crate[0]);
+                    }, 20L);
+
+                }, 200L);
 
                 Bukkit.getScheduler().scheduleSyncDelayedTask(RandomCrates.this, () -> {
-                    for (Entity nearby : RandomCratesCommand.getNearbyEntities(crateLoc, 5)) {
+                    for (Entity nearby : getNearbyEntities(crateLoc, 5)) {
                         if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
                             crate[0] = (LivingEntity) nearby;
                             crate[0].setRemoveWhenFarAway(false);
