@@ -2,8 +2,17 @@ package fr.rayto.randomcrates;
 
 import fr.rayto.randomcrates.commands.RandomCratesCommand;
 import fr.rayto.randomcrates.listener.EntityDamageByEntityListener;
+import net.minecraft.server.v1_7_R4.EntityPlayer;
+import net.minecraft.server.v1_7_R4.MinecraftServer;
+import net.minecraft.server.v1_7_R4.PlayerInteractManager;
+import net.minecraft.server.v1_7_R4.WorldServer;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import org.bukkit.*;
+import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.craftbukkit.v1_7_R4.CraftServer;
+import org.bukkit.craftbukkit.v1_7_R4.CraftWorld;
+import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.PluginManager;
@@ -11,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import java.util.Random;
+import java.util.UUID;
 
 import static fr.rayto.randomcrates.commands.RandomCratesCommand.getNearbyEntities;
 
@@ -25,7 +35,6 @@ public final class RandomCrates extends JavaPlugin {
     /*  Runnable */
     public int task1;
     public int task3;
-
     /*On Enable*/
     @Override
     public void onEnable()
@@ -57,6 +66,7 @@ public final class RandomCrates extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntityListener(this), this);
 
         System.out.println("RandomCrates - Plugin by Rayto#1745");
+
 
         if(config.getBoolean("crate.event_ready")) {
             EventRepetitionScheduler();
@@ -190,23 +200,40 @@ public final class RandomCrates extends JavaPlugin {
 
                 final LivingEntity[] crate = {null};
 
+                MinecraftServer nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
+
+                WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
+
+                EntityPlayer placeholder = new EntityPlayer(nmsServer, nmsWorld, new GameProfile(UUID.randomUUID(), "Largage"), new PlayerInteractManager(nmsWorld));
+
+                placeholder.setLocation(crateLoc.getX(), crateLoc.getY(), crateLoc.getZ(), 0, 0);
+                placeholder.teleportTo(crateLoc, false);
+
+                CraftPlayer delegate = new CraftPlayer((CraftServer) getServer(), placeholder);
+                delegate.setOp(true);
+
+
+
                 Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
+                    try {
+                        Bukkit.getServer().dispatchCommand(delegate.getPlayer(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
+                    } catch(CommandException ignored) {
 
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
+                    }
+                    delegate.setOp(false);
 
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
-
-                        for (Entity nearby : getNearbyEntities(crateLoc, 5)) {
-                            if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
-                                crate[0] = (LivingEntity) nearby;
-                                crate[0].setRemoveWhenFarAway(false);
-                            }
+                    for (Entity nearby : getNearbyEntities(crateLoc, 10)) {
+                        if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
+                            crate[0] = (LivingEntity) nearby;
+                            crate[0].setRemoveWhenFarAway(false);
                         }
 
-                        StartParachute(crate[0]);
-                    }, 20L);
+                    }
 
-                }, 200L);
+                    StartParachute(crate[0]);
+
+                }, 40L);
+
 
                 Bukkit.getScheduler().scheduleSyncDelayedTask(RandomCrates.this, () -> {
                     for (Entity nearby : getNearbyEntities(crateLoc, 5)) {
@@ -260,4 +287,8 @@ public final class RandomCrates extends JavaPlugin {
     public State getState() {
         return this.current;
     }
+
+
+
+
 }

@@ -1,16 +1,26 @@
 package fr.rayto.randomcrates.commands;
 
 import fr.rayto.randomcrates.RandomCrates;
+import net.minecraft.server.v1_7_R4.EntityPlayer;
+import net.minecraft.server.v1_7_R4.MinecraftServer;
+import net.minecraft.server.v1_7_R4.PlayerInteractManager;
+import net.minecraft.server.v1_7_R4.WorldServer;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_7_R4.CraftServer;
+import org.bukkit.craftbukkit.v1_7_R4.CraftWorld;
+import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.HashSet;
+import java.util.UUID;
 
 public class RandomCratesCommand implements CommandExecutor {
 
@@ -39,25 +49,44 @@ public class RandomCratesCommand implements CommandExecutor {
                 if(main.getConfig().getBoolean("crate.event_ready")) {
                     Location crateLoc = main.generate(player.getWorld(), 19200, -1530, 14200, 900, 0, 0);
                     crateLoc.getChunk().load(true);
+                    Bukkit.getServer().getWorld(main.getConfig().getString("crate.world_spawn_name")).getChunkAt(crateLoc).load();
+
                     final LivingEntity[] crate = {null};
 
+
+                    MinecraftServer nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
+
+                    WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
+
+                    EntityPlayer placeholder = new EntityPlayer(nmsServer, nmsWorld, new GameProfile(UUID.randomUUID(), "Largage"), new PlayerInteractManager(nmsWorld));
+
+                    placeholder.setLocation(crateLoc.getX(), crateLoc.getY(), crateLoc.getZ(), 0, 0);
+                    placeholder.teleportTo(crateLoc, false);
+
+                    CraftPlayer delegate = new CraftPlayer((CraftServer) main.getServer(), placeholder);
+                    delegate.setOp(true);
+
+
+
                     Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
+                        try {
+                            Bukkit.getServer().dispatchCommand(delegate.getPlayer(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
+                        } catch(CommandException ignored) {
 
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
+                        }
+                        delegate.setOp(false);
 
-                        Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
+                        for (Entity nearby : getNearbyEntities(crateLoc, 10)) {
+                            if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
+                                crate[0] = (LivingEntity) nearby;
+                                crate[0].setRemoveWhenFarAway(false);
+                            }
 
-                        for (Entity nearby : getNearbyEntities(crateLoc, 5)) {
-                                    if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
-                                        crate[0] = (LivingEntity) nearby;
-                                        crate[0].setRemoveWhenFarAway(false);
-                                    }
-                                }
+                        }
 
-                            main.StartParachute(crate[0]);
-                        }, 20L);
+                        main.StartParachute(crate[0]);
 
-                    }, 200L);
+                    }, 40L);
 
 
 
@@ -73,10 +102,6 @@ public class RandomCratesCommand implements CommandExecutor {
 
                     int loc = crateLoc.getWorld().getHighestBlockYAt((int) crateLoc.getX(), (int) crateLoc.getZ());
                     player.teleport(new Location(crateLoc.getWorld(), crateLoc.getX(), loc, (int) crateLoc.getZ()));
-
-
-
-
 
                     // TIMER END //
                     Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {

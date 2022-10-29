@@ -3,6 +3,7 @@ package fr.rayto.randomcrates.listener;
 import fr.rayto.randomcrates.RandomCrates;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,6 +14,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.util.Random;
+
+import static fr.rayto.randomcrates.commands.RandomCratesCommand.getNearbyEntities;
 
 public class EntityDamageByEntityListener implements Listener {
     private final RandomCrates main;
@@ -28,13 +31,14 @@ public class EntityDamageByEntityListener implements Listener {
     @SuppressWarnings("deprecation")
     @EventHandler
     public void EntityKnockback(EntityDamageByEntityEvent event){
-        if(event.getEntity() instanceof LivingEntity && (event.getDamager() instanceof Player) && !(event.getEntity() instanceof Player)){
-            Player player = (Player) event.getDamager();
+        if(event.getEntity() instanceof LivingEntity && (event.getDamager() instanceof Player || event.getDamager().getType().toString().contains("FLANS")) && !(event.getEntity() instanceof Player)){
             LivingEntity entity = (LivingEntity) event.getEntity();
-
+            Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> entity.setVelocity(new Vector()), 1);
+            entity.setVelocity(new Vector());
             if(entity.getType().name().equals("WONCORE_MOBCRATE")) {
                 if (entity.getHealth() - event.getFinalDamage() <= 0) {
-                    if(event.getDamager() instanceof Player) {
+                    entity.damage(20.0);
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
                         int i =0 ;
                         while(i < main.getConfig().getInt("crate.loot_number")){
                             i++;
@@ -55,15 +59,24 @@ public class EntityDamageByEntityListener implements Listener {
 
                             }
                         }
-                        Bukkit.broadcastMessage(" ");
-                        Bukkit.broadcastMessage("§fLe largage a été récupéré par§6 " + player.getName() + "§f.");
-                        Bukkit.broadcastMessage(" ");
-                    }
+                        if(event.getDamager() instanceof Player) {
+                            Player player = (Player) event.getDamager();
+
+                            Bukkit.broadcastMessage(" ");
+                            Bukkit.broadcastMessage("§fLe largage a été récupéré par§6 " + player.getName() + "§f.");
+                            Bukkit.broadcastMessage(" ");
+                        } else {
+                            Bukkit.broadcastMessage(" ");
+                            Bukkit.broadcastMessage("§fLe largage a été récupéré par un joueur.");
+                            Bukkit.broadcastMessage(" ");
+                        }
+                    }, 20);
+
+
                 }
 
-                Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> entity.setVelocity(new Vector()), 1);
-                entity.setVelocity(new Vector());
             }
         }
     }
 }
+
