@@ -19,6 +19,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
 import java.util.Random;
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ public final class RandomCrates extends JavaPlugin {
 
     /* Config */
     FileConfiguration config = getConfig();
+    public HashMap<UUID, Integer> shooter = new HashMap<UUID, Integer>();
 
     /*  States & Obj */
     private State current;
@@ -205,6 +207,7 @@ public final class RandomCrates extends JavaPlugin {
                 WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
 
                 EntityPlayer placeholder = new EntityPlayer(nmsServer, nmsWorld, new GameProfile(UUID.randomUUID(), "Largage"), new PlayerInteractManager(nmsWorld));
+                placeholder.weather=WeatherType.CLEAR;
 
                 placeholder.setLocation(crateLoc.getX(), crateLoc.getY(), crateLoc.getZ(), 0, 0);
                 placeholder.teleportTo(crateLoc, false);
@@ -212,15 +215,12 @@ public final class RandomCrates extends JavaPlugin {
                 CraftPlayer delegate = new CraftPlayer((CraftServer) getServer(), placeholder);
                 delegate.setOp(true);
 
-
-
                 Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
                     try {
                         Bukkit.getServer().dispatchCommand(delegate.getPlayer(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
-                    } catch(CommandException ignored) {
-
-                    }
+                    } catch(CommandException ignored) {}
                     delegate.setOp(false);
+                    delegate.disconnect("No reason");
 
                     for (Entity nearby : getNearbyEntities(crateLoc, 10)) {
                         if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {

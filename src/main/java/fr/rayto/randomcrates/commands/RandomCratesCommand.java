@@ -8,6 +8,7 @@ import net.minecraft.server.v1_7_R4.WorldServer;
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.WeatherType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandExecutor;
@@ -62,33 +63,29 @@ public class RandomCratesCommand implements CommandExecutor {
 
                     placeholder.setLocation(crateLoc.getX(), crateLoc.getY(), crateLoc.getZ(), 0, 0);
                     placeholder.teleportTo(crateLoc, false);
+                    placeholder.weather=WeatherType.CLEAR;
 
                     CraftPlayer delegate = new CraftPlayer((CraftServer) main.getServer(), placeholder);
                     delegate.setOp(true);
 
 
-
                     Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
                         try {
                             Bukkit.getServer().dispatchCommand(delegate.getPlayer(), "summon MobCrate " + Math.round(crateLoc.getX()) + " " + Math.round(crateLoc.getY()) + " " + Math.round(crateLoc.getZ()));
-                        } catch(CommandException ignored) {
-
-                        }
+                        } catch(CommandException ignored) {}
                         delegate.setOp(false);
+                        delegate.disconnect("No reason");
 
                         for (Entity nearby : getNearbyEntities(crateLoc, 10)) {
-                            if (nearby.getType().name().equals("WONCORE_MOBCRATE")) {
+                            if(nearby.getType().name().equals("WONCORE_MOBCRATE")) {
                                 crate[0] = (LivingEntity) nearby;
                                 crate[0].setRemoveWhenFarAway(false);
                             }
-
                         }
 
                         main.StartParachute(crate[0]);
 
                     }, 40L);
-
-
 
 
                     Bukkit.broadcastMessage("§8§l§m+                                    +");

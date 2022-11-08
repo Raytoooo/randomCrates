@@ -7,15 +7,17 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.util.Random;
-
-import static fr.rayto.randomcrates.commands.RandomCratesCommand.getNearbyEntities;
+import java.util.UUID;
 
 public class EntityDamageByEntityListener implements Listener {
     private final RandomCrates main;
@@ -33,9 +35,10 @@ public class EntityDamageByEntityListener implements Listener {
     public void EntityKnockback(EntityDamageByEntityEvent event){
         if(event.getEntity() instanceof LivingEntity && (event.getDamager() instanceof Player || event.getDamager().getType().toString().contains("FLANS")) && !(event.getEntity() instanceof Player)){
             LivingEntity entity = (LivingEntity) event.getEntity();
-            Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> entity.setVelocity(new Vector()), 1);
-            entity.setVelocity(new Vector());
             if(entity.getType().name().equals("WONCORE_MOBCRATE")) {
+                entity.setVelocity(new Vector());
+                Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> entity.setVelocity(new Vector()), 1);
+                entity.setVelocity(new Vector());
                 if (entity.getHealth() - event.getFinalDamage() <= 0) {
                     entity.damage(20.0);
                     Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
@@ -66,14 +69,45 @@ public class EntityDamageByEntityListener implements Listener {
                             Bukkit.broadcastMessage("§fLe largage a été récupéré par§6 " + player.getName() + "§f.");
                             Bukkit.broadcastMessage(" ");
                         } else {
+                            String playername = "un joueur";
+
+                            if(event.getDamager().getType().toString().equals("FLANSMOD_BULLET")) {
+                                for(Entity e : entity.getNearbyEntities(128, 128, 128)) {
+                                    if(e instanceof Player) {
+                                        if(main.shooter.containsKey(e.getUniqueId())) {
+                                            playername = ((Player)e).getName();
+                                        }
+                                    }
+                                }
+                            }
+
                             Bukkit.broadcastMessage(" ");
-                            Bukkit.broadcastMessage("§fLe largage a été récupéré par un joueur.");
+                            Bukkit.broadcastMessage("§fLe largage a été récupéré par §6" + playername + "§f.");
                             Bukkit.broadcastMessage(" ");
                         }
                     }, 20);
 
-
                 }
+
+            }
+        }
+    }
+
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInteract(PlayerInteractEvent event) {
+        if(event.getAction().equals(Action.LEFT_CLICK_AIR) ||event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
+            if(event.getPlayer().getItemInHand().getType().toString().contains("FLANSMOD")) {
+                UUID playerID = event.getPlayer().getUniqueId();
+                if (main.shooter.containsKey(playerID)) {
+                    Bukkit.getServer().getScheduler().cancelTask(main.shooter.get(playerID));
+                    main.shooter.remove(playerID);
+                }
+                main.shooter.put(playerID,
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
+                            Bukkit.getServer().getScheduler().cancelTask(main.shooter.get(playerID));
+                            main.shooter.remove(playerID);
+                        }, 200L));
 
             }
         }
